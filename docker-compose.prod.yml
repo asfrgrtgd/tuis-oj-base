@@ -1,0 +1,44 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    env_file:
+      - ./frontend/.env.production
+    # ビルド済み dist を共有ボリュームに配置し、Caddy が配信
+    volumes:
+      - frontend-dist:/usr/share/nginx/html
+    depends_on:
+      - api
+
+  api:
+    environment:
+      - LOG_DIR=/var/log/oj/api
+    volumes:
+      - ./logs/api:/var/log/oj/api
+
+  worker:
+    environment:
+      - LOG_DIR=/var/log/oj/worker
+    volumes:
+      - ./logs/worker:/var/log/oj/worker
+
+  caddy:
+    image: caddy:2-alpine@sha256:953131cfea8e12bfe1c631a36308e9660e4389f0c3dfb3be957044d3ac92d446
+    depends_on:
+      - api
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - frontend-dist:/usr/share/caddy/dist:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./logs/caddy:/var/log/caddy
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  frontend-dist:
+  caddy-data:
+  caddy-config:

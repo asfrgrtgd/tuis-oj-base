@@ -1,0 +1,13 @@
+# build cache
+bin
+*.test
+*.out
+
+# vcs
+.git
+
+# editor
+.vscode
+.idea
+.DS_Store
+

@@ -1,0 +1,19 @@
+# runtime logs are generated; keep directories but ignore their files
+logs/api/*
+!logs/api/.gitignore
+logs/caddy/*
+!logs/caddy/.gitignore
+logs/worker/*
+!logs/worker/.gitignore
+
+# submission files are generated; keep directories but ignore their files
+submission-files/*
+!submission-files/.gitkeep
+
+.env
+.env.production
+frontend/.env
+frontend/.env.development
+frontend/.env.production
+
+secrets

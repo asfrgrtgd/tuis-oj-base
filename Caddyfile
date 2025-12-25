@@ -1,0 +1,47 @@
+# グローバルオプション: エラーログもファイルに出力
+{
+  log {
+    output file /var/log/caddy/caddy.log {
+      roll_size 10mb
+      roll_keep 10
+      roll_keep_for 720h
+    }
+    level INFO
+  }
+}
+
+# HTTP はドメイン指定で HTTPS へリダイレクト（www なしのみ運用）
+http://tuis-oj.com {
+  redir https://tuis-oj.com{uri}
+}
+
+# HTTPS 本番ホスト
+tuis-oj.com {
+  # 一時的に Caddy の internal CA で自己署名証明書を使用
+  # tls internal
+
+  # アクセスログ
+  log {
+    output file /var/log/caddy/access.log {
+      roll_size 10mb
+      roll_keep 10
+      roll_keep_for 720h
+    }
+    format json
+  }
+
+  # API は明示 matcher で最優先
+  @api path /api/*
+  handle @api {
+    encode zstd gzip
+    reverse_proxy api:3000
+  }
+
+  # フロントエンド (SPA)
+  handle {
+    encode zstd gzip
+    root * /usr/share/caddy/dist
+    try_files {path} /index.html
+    file_server
+  }
+}

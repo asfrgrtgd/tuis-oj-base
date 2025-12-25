@@ -1,0 +1,93 @@
+services:
+  go-judge:
+    build: .
+    privileged: true
+    shm_size: 256m
+    ports:
+      - "5050:5050"
+      - "5051:5051"
+      - "5052:5052"
+    command:
+      - ./go-judge
+      - -http-addr=0.0.0.0:5050
+      - -enable-grpc
+      - -grpc-addr=0.0.0.0:5051
+      - -enable-metrics
+      - -monitor-addr=0.0.0.0:5052
+      - -dir=/opt/file-store
+      - -parallelism=${GOJUDGE_PARALLELISM:-4}
+    volumes:
+      - judge-file-store:/opt/file-store
+    restart: unless-stopped
+
+  db:
+    # postgres digest pinned (built 2025-11-14 UTC)
+    image: postgres@sha256:9a78577340f3d26384b6aebeb475c0d46d664fd4ffa68503b4be4e4462745f94
+    env_file:
+      - ./.env
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development  # 現状は開発用のViteサーバーで配信
+    ports:
+      - "8080:8080"
+    environment:
+      - VITE_API_URL=http://api:3000
+      - VITE_API_BASE=/api/v1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    env_file:
+      - ./.env
+    environment:
+      - LOG_DIR=/var/log/oj/api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./submission-files:/app/submission-files
+      - ./migrations:/migrations:ro
+      - ./secrets:/run/oj-secrets
+      - ./logs/api:/var/log/oj/api
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  worker:
+    build: ./api
+    entrypoint: ["/app/worker"]
+    env_file:
+      - ./.env
+    environment:
+      - WORKER_CONCURRENCY=${WORKER_CONCURRENCY:-4}
+      - LOG_DIR=/var/log/oj/worker
+    depends_on:
+      - db
+      - go-judge
+      - redis
+    volumes:
+      - ./submission-files:/app/submission-files
+      - ./migrations:/migrations:ro
+      - ./secrets:/run/oj-secrets
+      - ./logs/worker:/var/log/oj/worker
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine@sha256:ee64a64eaab618d88051c3ade8f6352d11531fcf79d9a4818b9b183d8c1d18ba
+    restart: unless-stopped
+
+volumes:
+  judge-file-store:
+  pgdata:
