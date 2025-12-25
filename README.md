@@ -20,8 +20,11 @@ Docker Compose ひとつで動くオンラインジャッジ基盤（API / Worke
 ## ローカルで動かす手順
 
 ### 前提条件
-- Git
-- Docker / Docker Compose
+- **OS**: Linux または WSL2（Windows Subsystem for Linux）
+  - Windows の場合は WSL2 をインストールしてください
+  - macOS の場合は Docker Desktop をインストールしてください
+- **Git**: バージョン管理ツール
+- **Docker / Docker Compose**: `docker compose` コマンドが使えること
 
 ### 1. リポジトリを取得
 ```bash
