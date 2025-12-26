@@ -39,12 +39,22 @@ cp frontend/.env.example frontend/.env
 ```
 > ローカル開発ならデフォルトで OK。本番では `.env` 内の `SESSION_KEY` と `CSRF_SECRET` を必ず変更してください。
 
-### 3. コンテナをビルド・起動
+### 3. ファイルパーミッションの設定（Linux/WSL2 のみ）
+API/Worker コンテナは `appuser`（uid:65532）で動作します。提出ファイルやログ、シークレットが保存されるディレクトリの所有者を事前に設定してください。
+
+```bash
+sudo chown -R 65532:65532 submission-files logs secrets
+sudo chmod -R u+rwX submission-files logs secrets
+```
+
+> **注**: macOS の Docker Desktop では不要です。
+
+### 4. コンテナをビルド・起動
 ```bash
 docker compose up -d --build
 ```
 
-### 4. DB マイグレーション（初回のみ）
+### 5. DB マイグレーション（初回のみ）
 ```bash
 POSTGRES_URL="postgres://tuisoj:tuisoj@db:5432/tuisoj?sslmode=disable"
 docker compose run --rm --entrypoint migrate \
@@ -52,12 +62,12 @@ docker compose run --rm --entrypoint migrate \
   api -path=/migrations -database "$POSTGRES_URL" up
 ```
 
-### 5. 動作確認
+### 6. 動作確認
 | サービス | URL |
 |---------|-----|
 | Web UI (dev) | http://localhost:8080 |
 
-### 6. 初期管理者でログイン
+### 7. 初期管理者でログイン
 `BOOTSTRAP_ADMIN=true`（デフォルト）の場合、初回起動時に `admin` ユーザーが自動作成されます。
 ```bash
 cat secrets/initial_admin_password.secret
